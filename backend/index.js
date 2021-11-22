@@ -7,12 +7,13 @@ const app = express()
 const data = [];
 app.use(bodyParser.json());
 
-var __dirname = require('../front-end')
+var path = require('path');
 
 // viewed at http://localhost:8080
-app.get('/', function(req, res) {
-    res.sendFile(path.join(__dirname + '/index.html'));
+app.get('/gelukt', function(req, res) {
+  console.log("Gelukt")
 });
+
 
 app.post('/post', (req, res) => {
   console.log(req.body)
@@ -27,9 +28,16 @@ app.post('/registration', async(req, res) => {
 
 app.post('/login', async(req, res) => {
   const params = req.body;
-  const token = security.login(params.email, params.password);
-  console.log(token)
-  await res.send(params);
+  security.login(params.email, params.password)
+    .then((loginRes) => res.status(200).json(loginRes))
+    .catch((err) => res.status(404).json(err))
+});
+
+app.post('/validatetoken', async(req, res) => {
+  const params = req.body;
+  security.validateToken(params.token)
+    .then((tokenRes) => res.status(200).json(tokenRes))
+    .catch((err) => res.status(404).json(err))
 });
 
 app.listen(port, () => {
