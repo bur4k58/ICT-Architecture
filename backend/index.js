@@ -39,7 +39,7 @@ app.post('/signaluploadcomplete', (req, res) => {
   console.log("Output object id: ", outputObjectId)
   const outputImageUrl = generatePutUrl(outputObjectId, 'image/gif');
 
-  axios,post('https://msw31oj97f.execute-api.eu-west-1.amazonaws.com/Prod/generate/gif',{
+  axios.post('https://msw31oj97f.execute-api.eu-west-1.amazonaws.com/Prod/generate/gif',{
     inputImageUrls,
     outputObjectId
   },
