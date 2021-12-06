@@ -1,64 +1,52 @@
 const security = require("../backend/security");
 const express = require('express')
-const bodyParser = require('body-parser')
-const fs = require('fs')
 const AWS = require('aws-sdk');
 const axios = require('axios');
 const {v4} = require('uuid');
 
 const port = 8080
 const app = express()
-const data = [];
 app.use(express.json());
-
-
-/////////////S3
-const bucketName = "gif-project4";
-const s3 = new AWS.S3();
 
 // viewed at http://localhost:8080
 app.get('/gelukt', function(req, res) {
   console.log("Gelukt")
 });
 
-app.get('/getuploadurl', (req, res) => {
+/////////////S3
+const bucketName = "gif-project4";
+const s3 = new AWS.S3();
+
+app.post('/upload', (req, res) => {
   const objectId = v4();
   console.log('return upload with objectId: ', objectId)
-  const generateUrl = generatePutUrl(objectId);
-  res.json(generateUrl);
+  s3.upload({
+    Key: objectId,
+    Bucket: bucketName,
+    Body: "Hoe gaat het?",
+  }).promise().then((response) => {
+    console.log(response);
+    res.json({ message: objectId })
+  }).catch((error) => {
+    console.log(error);
+  })
 });
 
-app.post('/signaluploadcomplete', (req, res) => {
-  const {uploadUrls} = req.body;
-
-  const objectIds = uploadUrls.map(uploadUrl => extractObjectId(uploadUrl));
-
-  const inputImageUrls = objectIds.map(objectId => generateGetUrl(objectId));
-
-  const outputObjectId = v4();
-  console.log("Output object id: ", outputObjectId)
-  const outputImageUrl = generatePutUrl(outputObjectId, 'image/gif');
-
-  axios.post('https://msw31oj97f.execute-api.eu-west-1.amazonaws.com/Prod/generate/gif',{
-    inputImageUrls,
-    outputObjectId
-  },
-  {headers: {
-    'x-api-key': 'SIdHi3lzwma61h4GeBGR96ZD4rpsa3mb6iKVlMG7'
-  }})
-    .then(function (res) {
-      res.json(outputObjectId)
-    })
-    .catch(function(error) {
-      res.status(500).json(error);
-    });
+app.get('/get', (req, res) => {
+  const objectId = req.body.objectId
+  console.log('return file with objectId: ', objectId)
+  s3.getObject({
+    Key: objectId,
+    Bucket: bucketName
+  }).promise()
+  .then((data) => (res.json({
+    LastModified: data.LastModified,
+    filename: objectId,
+    base_contects: data.Body.toString('base64'),
+  }))).catch((err) => {
+    console.log(err)
+  })
 });
-
-function extractObjectId(url) {
-  const urlWithOutParams = url.split('?')[0];
-  const splitUrlInSplashes = urlWithOutParams.split('/');
-  return splitUrlInSplashes[splitUrlInSplashes.length -1];
-}
 
 function generateGetUrl(objectId){
   return s3.getSignedUrl("getObject", {
