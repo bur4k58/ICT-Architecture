@@ -8,6 +8,16 @@ const port = 8080
 const app = express()
 app.use(express.json());
 
+const express = require('express')
+const mysql = require('mysql');
+const connection = mysql.createConnection({
+    host: "les5rds.cxz9ddw6myfz.us-east-1.rds.amazonaws.com",
+    user: "admin",
+    password: "password",
+    port: 3306
+
+});
+
 // viewed at http://localhost:8080
 app.get('/gelukt', function(req, res) {
   console.log("Gelukt")
