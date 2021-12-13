@@ -1,21 +1,21 @@
 const security = require("../backend/security");
 const express = require('express')
 const AWS = require('aws-sdk');
-const axios = require('axios');
-const {v4} = require('uuid');
+const mysql = require('mysql');
+const {v4: uuidv4 } = require('uuid');
+const v4  = require('uuid');
 
 const port = 8080
 const app = express()
 app.use(express.json());
+var fileupload = require("express-fileupload");
+app.use(fileupload());
 
-const express = require('express')
-const mysql = require('mysql');
-const connection = mysql.createConnection({
-    host: "les5rds.cxz9ddw6myfz.us-east-1.rds.amazonaws.com",
+const pool = mysql.createPool({
+    host: "dbproject.caqmue8hvaqa.us-east-1.rds.amazonaws.com",
     user: "admin",
-    password: "password",
+    password: "rootroot",
     port: 3306
-
 });
 
 // viewed at http://localhost:8080
@@ -33,7 +33,7 @@ app.post('/upload', (req, res) => {
   s3.upload({
     Key: objectId,
     Bucket: bucketName,
-    Body: "Hoe gaat het?",
+    Body: Buffer.from(req.body.contents, 'base64'),
   }).promise().then((response) => {
     console.log(response);
     res.json({ message: objectId })
@@ -95,6 +95,31 @@ app.post('/validatetoken', async(req, res) => {
     .then((tokenRes) => res.status(200).json(tokenRes))
     .catch((err) => res.status(404).json(err))
 });
+
+//Database
+app.post('/users', (req, res) => {
+  pool.getConnection(function(err, connection) {
+      if (err) throw err; // not connected!
+     
+      // Use the connection
+      if(req.query.statusFeatures) {
+          console.log('Request received');
+          connection.connect(function(err) {
+              connection.query('USE gif_div');            
+              connection.query(`INSERT INTO gif_dev.gif_metadata (uuid, tijdstippen, statusFeatures) VALUES ('${req.query.uuid}', now(), '${req.query.statusFeatures}')`, function(err, result, fields) {
+                  if (err) res.send(err);
+                  if (result) res.send({uuid: req.query.uuid, statusFeatures: req.query.statusFeatures, tijdstippen: Date.now()});
+                  if (fields) console.log(fields);
+              });
+          });
+  
+      } else {
+          console.log('missing a parameter');
+      }
+  
+    });
+  });
+
 
 app.listen(port, () => {
   console.log('Example app listening at http://localhost:8080')
