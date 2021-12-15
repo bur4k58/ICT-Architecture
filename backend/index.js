@@ -29,17 +29,19 @@ const s3 = new AWS.S3();
 
 app.post('/upload', (req, res) => {
   const objectId = v4();
-  console.log('return upload with objectId: ', objectId)
-  s3.upload({
-    Key: objectId,
-    Bucket: bucketName,
-    Body: Buffer.from(req.body.contents, 'base64'),
-  }).promise().then((response) => {
-    console.log(response);
-    res.json({ message: objectId })
-  }).catch((error) => {
-    console.log(error);
-  })
+  const params = req.body;
+  security.validateToken(params.token)
+    .then((tokenRes) => s3.upload({
+      Key: objectId,
+      Bucket: bucketName,
+      Body: Buffer.from(req.body.contents, 'base64'),
+    }).promise().then((response) => {
+      console.log(response);
+      res.json({ message: objectId })
+    }).catch((error) => {
+      console.log(error);
+    }))
+    .catch((err) => res.status(404).json(err))
 });
 
 app.get('/get', (req, res) => {
@@ -105,7 +107,7 @@ app.post('/users', (req, res) => {
       if(req.query.statusFeatures) {
           console.log('Request received');
           connection.connect(function(err) {
-              connection.query('USE gif_div');            
+              connection.query('USE gif_dev');            
               connection.query(`INSERT INTO gif_dev.gif_metadata (uuid, tijdstippen, statusFeatures) VALUES ('${req.query.uuid}', now(), '${req.query.statusFeatures}')`, function(err, result, fields) {
                   if (err) res.send(err);
                   if (result) res.send({uuid: req.query.uuid, statusFeatures: req.query.statusFeatures, tijdstippen: Date.now()});
